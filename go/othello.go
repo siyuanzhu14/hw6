@@ -9,7 +9,7 @@ import (
 
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	//"math/rand"
 	"net/http"
 )
 
@@ -49,6 +49,8 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
 		fmt.Fprintf(w, "invalid json %v? %v", string(js), err)
 		return
 	}
+	
+	
 	board := game.Board
 	log.Infof(ctx, "got board: %v", board)
 	moves := board.ValidMoves()
@@ -61,7 +63,8 @@ Paste JSON here:<p/><textarea name=json cols=80 rows=24></textarea>
 	// list of possible moves, but you'll want to make this choose a
 	// better move (probably using some game tree traversal algorithm
 	// like MinMax).
-	move := moves[rand.Intn(len(moves))]
+	//move := moves[rand.Intn(len(moves))]
+	move := board.DecideMinMax()
 	fmt.Fprintf(w, "[%d,%d]", move.Where[0], move.Where[1])
 }
 
@@ -255,7 +258,7 @@ func (b Board) String() string {
 	buf.WriteString("-+--------+\n")
 	for y := 0; y < 8; y++ {
 		fmt.Fprintf(buf, "%d|", y+1)
-		for x := 0; x < 8; x++ {
+		for  x := 0; x < 8; x++ {
 			p := b.Pieces[y][x]
 			switch p {
 			case Red:
@@ -272,3 +275,113 @@ func (b Board) String() string {
 	buf.WriteString(" |ABCDEFGH|\n")
 	return buf.String()
 }
+
+
+//********************************************//
+
+//Caculate the "score" of the current board state
+func (b *Board) Evaluate () int{
+    
+     WeightBoard:= [][]int{
+        {1200, -20, 20, 5,5,20,-20,1200},
+        {-20,-400,-5,-5,-5,-5,-400,-20},
+        {20,-5,15,3,3,15,-5,20},
+        {5,-5,3,3,3,3,-5,5},
+        {5,-5,3,3,3,3,-5,5},
+        {20,-5,15,3,3,15,-5,20},
+        {-20,-400,-5,-5,-5,-5,-400,-20},
+        {1200, -20, 20, 5,5,20,-20,1200},
+    }
+    
+    Score := 0
+    
+    for i:= 0; i < 8; i++ {
+        for j:= 0; j <8; j++{
+            if b.Pieces[i][j] == Empty{
+                break
+            }else if b.Next == b.Pieces[i][j]{
+                Score += WeightBoard[i][j]
+            }else{
+                Score -= WeightBoard[i][j]
+            }
+        }
+    }
+    
+    return Score
+}
+
+//MinMax algorithm
+func (b *Board) MinMax(BestScore int, OppBestScore int, Depth int) (int, Move){
+    
+    valid := b.ValidMoves()
+    
+    if Depth == 0{
+        var returnTemp Move
+        return b.Evaluate(), returnTemp
+    }
+    
+    if valid == nil{
+        var returnTemp Move
+        return b.Evaluate(), returnTemp
+    }
+    
+    var BestMove Move
+    
+    for _, move := range valid{
+        
+        newB := b.Clone()
+        newB, _ = newB.Exec(move)
+        
+        //BestScore: best self score
+        //OppBestScore: best opponent score(here a negative value)
+        if BestScore > OppBestScore{
+            break
+        }//no modification needed
+        
+        score, _ := newB.MinMax(BestScore, OppBestScore, Depth - 1)
+        score = -score
+        //newB has the next state of b state, thus the symbol of the b and newB scores are different
+        
+        /*
+        if score >= OppBestScore {
+            ---level 1---
+            ---the best level---
+        }
+        */
+        if score >= BestScore{
+                //level 2
+                BestScore = score
+                BestMove = move
+        }
+        
+    }
+    return BestScore, BestMove
+}
+
+func (b *Board) DecideMinMax()(Move){
+    
+    
+    _, move := b.MinMax(-9999999999, 99999999999, 5)
+    return move
+    
+}
+
+
+
+/*//think about method of enhancing the efficiency by sorting the valid moves.
+
+//h := [][][]Move
+//such that: h[Black][t]:the list of good moves of black player at turn t.
+//memo all the moves in the previous calls of MinMax
+//for moves checked in MinMax func, if it falls in level 1, add it to the head of h[player][turn]
+//if falls in level2, add it to the end of h[player][turn]
+
+ func (h *History)history HistoryTable(){
+   
+ }
+ 
+ 
+ 
+ 
+ 
+ */
