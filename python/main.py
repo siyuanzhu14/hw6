@@ -9,11 +9,11 @@ import webapp2
 
 
 class Game:
-  # Reads json description of the board and provides simple interface for
-  # simulating moves.
+    # Reads json description of the board and provides simple interface for
+    # simulating moves.
 
-  def __init__(self, body=None, board=None):
-  # Takes json or a board directly.
+    def __init__(self, body=None, board=None):
+        # Takes json or a board directly.
         if body:
             game = json.loads(body)
             self._board = game["board"]
@@ -23,18 +23,18 @@ class Game:
     # Returns piece on the board.
     # 0 for no pieces, 1 for player 1, 2 for player 2.
     # None for coordinate out of scope.
-  def Pos(self, x, y):
+    def Pos(self, x, y):
         return Pos(self._board["Pieces"], x, y)
 
     # Returns who plays next.
-  def Next(self):
+    def Next(self):
         return self._board["Next"]
 
     # Returns the array of valid moves for next player.
     # Each move is a dict
     #   "Where": [x,y]
     #   "As": player number
-  def ValidMoves(self):
+    def ValidMoves(self):
         moves = []
         for y in xrange(1, 9):
             for x in xrange(1, 9):
@@ -48,7 +48,7 @@ class Game:
     # (delta_x, delta_y) direction for one of our own pieces and
     # flips pieces in between if the move is valid. Returns True
     # if pieces are captured in this direction, False otherwise.
-  def __UpdateBoardDirection(self, new_board, x, y, delta_x, delta_y):
+    def __UpdateBoardDirection(self, new_board, x, y, delta_x, delta_y):
         player = self.Next()
         opponent = 3 - player
         look_x = x + delta_x
@@ -73,7 +73,7 @@ class Game:
 
     # Takes a move dict and return the new Game state after that move.
     # Returns None if the move itself is invalid.
-  def NextBoardPosition(self, move):
+    def NextBoardPosition(self, move):
         x = move["Where"][0]
         y = move["Where"][1]
         if self.Pos(x, y) != 0:
